@@ -1,0 +1,194 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+
+public class Movie{
+        public int Id{get;set;}
+        public string Title{get;set;}
+        public string Genre{get;set;}
+        public int Year{get;set;}
+}
+
+public class DataAccessLayer{
+    List<Movie> movies = new List<Movie>();
+    
+    public void AddMovie(Movie movie){
+        if(movies.Count == 0){
+            movie.Id = 1;
+        } else {
+            movie.Id = movies.Max(m => m.Id) + 1;
+        }
+        movies.Add(movie);
+    }
+    
+    public List<Movie> GetAllMovies(){
+        return movies;    
+    }
+    
+    public void EditMovie(Movie movie){
+        bool found = false;
+        foreach(var i in movies){
+            if(i.Id == movie.Id){
+                found = true;
+                i.Title = movie.Title;
+                i.Genre = movie.Genre;
+                i.Year = movie.Year;
+                break;
+            }
+            
+        }
+        if(found == false){
+            throw new ArgumentException("Movie not found");
+        }
+    }
+    
+    public Movie FindMovie(string keyword){
+        foreach(var i in movies){
+            if(i.Title == keyword){
+                return i;
+            }
+        }
+        return null;
+    }
+    
+    public bool DeleteMovie(int deleteId){
+        foreach(var i in movies){
+            if(i.Id == deleteId){
+                movies.Remove(i);
+                return true;
+            }
+        }
+        return false;
+    }
+}
+    
+   
+public class BusinessLayer{
+    DataAccessLayer dl = new DataAccessLayer();
+    
+    public void AddMovie(Movie movie){
+        ValidateMovieData(movie);
+        dl.AddMovie(movie);
+    }
+    
+    public List<Movie> GetAllMovies(){
+        return dl.GetAllMovies();
+    }
+    
+    public void EditMovie(Movie movie){
+        ValidateMovieData(movie);
+        dl.EditMovie(movie);
+    }
+    
+    public Movie FindMovie(string keyword){
+        Movie searchedMovie = dl.FindMovie(keyword);
+        return searchedMovie;
+    }
+    
+    public bool DeleteMovie(int deleteId){
+        bool result  = dl.DeleteMovie(deleteId);
+        return result;
+    }
+    
+    public void ValidateMovieData(Movie movie){
+        if(string.IsNullOrEmpty(movie.Title)){
+            throw new ArgumentException("Title is required.");
+        }
+        
+        if(string.IsNullOrEmpty(movie.Genre)){
+            throw new ArgumentException("Genre is required");
+        }
+        
+        if(movie.Year < 1800 || movie.Year > DateTime.Now.Year){
+            throw new ArgumentException("Invalid year.");
+        }
+    }
+}
+
+
+class Program {
+  static void Main() {
+        try{
+        BusinessLayer businessLayer = new BusinessLayer();
+        Console.WriteLine("Menu:");
+        Console.WriteLine("1. Add Movie");
+        Console.WriteLine("2. Edit Movie");
+        Console.WriteLine("3. List Movies");
+        Console.WriteLine("4. Find Movie");
+        Console.WriteLine("5. Delete Movie");
+        Console.WriteLine("6. Exit");
+        while(true){
+        Console.Write("Choose Option: ");
+        int choice = int.Parse(Console.ReadLine());
+        switch(choice){
+            case 1:{
+                Console.Write("Title:");
+                string name=Console.ReadLine();
+                Console.Write("Genre:");
+                string genre=Console.ReadLine();
+                Console.Write("Year:");
+                int year=int.Parse(Console.ReadLine());
+                businessLayer.AddMovie(new Movie {Title = name,Genre = genre,Year = year});
+                Console.WriteLine("Movie added successfully.");
+                break;
+            }
+            case 2:{
+                Console.Write("Enter the movie Id to Edit: ");
+                int movieid=int.Parse(Console.ReadLine());
+                Console.Write("Title: ");
+                string title=Console.ReadLine();
+                Console.Write("Genre: ");
+                string genre=Console.ReadLine();
+                Console.WriteLine("Year: ");
+                int year=int.Parse(Console.ReadLine());
+                businessLayer.EditMovie(new Movie{Id = movieid,Title = title,Genre = genre,Year = year});
+                break;
+            }
+            case 3:{
+                List<Movie> li = businessLayer.GetAllMovies();
+                if(li.Count == 0){
+                    Console.WriteLine("No Movies found");
+                }
+                foreach(var i in li){
+                    Console.WriteLine($"Id: {i.Id}, Title: {i.Title}, Genre: {i.Genre}, Year: {i.Year}");
+                }
+                
+                break;
+            }
+            case 4:{
+                Console.Write("Enter the title to search: ");
+                string keyword = Console.ReadLine();
+                Movie li = businessLayer.FindMovie(keyword);
+                if(li != null){
+                    Console.WriteLine($"{li.Id} {li.Title} {li.Genre} {li.Year}");
+                } else{
+                    Console.WriteLine("Movie not found");
+                }
+                break;
+            }
+            case 5:{
+                Console.Write("Enter movie id to delete");
+                int deleteId = int.Parse(Console.ReadLine());
+                bool res =businessLayer.DeleteMovie(deleteId);
+                if(res){
+                    Console.WriteLine("Movie deleted successfully.");
+                } else{
+                     Console.WriteLine("Movie not found.");
+                }
+                break;
+            }
+            case 6:{
+                Console.WriteLine("Exited the Movie App");
+                return;
+            }
+            default:
+            Console.WriteLine("Invalid input");
+            break;
+        }
+      }
+    }catch(FormatException e){
+        Console.WriteLine(e.Message);
+    }
+  }
+}
+
